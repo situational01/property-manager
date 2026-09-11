@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Property Manager</title>
+    <meta
+      name="description"
+      content="Property and tenant management dashboard"
+    />
+    <style>
+      :root {
+        --ink: #263238;
+        --muted: #727b7d;
+        --paper: #fff;
+        --bg: #f3f1ec;
+        --line: #d9d6d0;
+        --soft: #f7f6f2;
+        --ok: #4f6d59;
+        --warn: #8a633d;
+        --bad: #8b4c45;
+        --blue: #526a72;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        font-family: Arial, Helvetica, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .login {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+      }
+      .login-box {
+        width: min(430px, 100%);
+        background: var(--paper);
+        border: 1px solid var(--line);
+        padding: 28px;
+      }
+      .login-box h1 {
+        margin: 0 0 5px;
+        font-size: 25px;
+      }
+      .login-box p {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--line);
+        margin: 20px 0 18px;
+      }
+      .tabs button {
+        flex: 1;
+        padding: 10px;
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        border-bottom: 2px solid transparent;
+      }
+      .tabs button.active {
+        color: var(--ink);
+        border-bottom-color: var(--ink);
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 13px;
+      }
+      .field label {
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .field input,
+      .field select {
+        border: 1px solid #d4d1ca;
+        padding: 10px;
+        background: #fff;
+        border-radius: 4px;
+        width: 100%;
+      }
+      .field input:focus,
+      .field select:focus,
+      .search:focus {
+        outline: 2px solid #b8c2c0;
+      }
+      .login-error {
+        background: #fbf6f4;
+        border: 1px solid #dfcbc6;
+        color: var(--bad);
+        padding: 10px;
+        font-size: 12px;
+        margin-bottom: 12px;
+      }
+      .login-hint {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 14px;
+      }
+      .app {
+        display: flex;
+        min-height: 100vh;
+      }
+      .sidebar {
+        width: 238px;
+        background: #26343c;
+        color: #f4f5f5;
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        padding: 24px 14px;
+        display: flex;
+        flex-direction: column;
+      }
+      .brand {
+        padding: 0 12px 22px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        margin-bottom: 16px;
+      }
+      .brand h1 {
+        font-size: 19px;
+        margin: 0;
+      }
+      .brand p {
+        font-size: 12px;
+        color: #bfc8ca;
+        margin: 6px 0 0;
+      }
+      .nav {
+        display: flex;
+        flex-direction: column;
+      }
+      .nav button {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: #cbd2d3;
+        padding: 11px 12px;
+        text-align: left;
+        border-radius: 4px;
+        margin: 2px 0;
+      }
+      .nav button:hover,
+      .nav button.active {
+        background: #1e2930;
+        color: #fff;
+      }
+      .side-bottom {
+        margin-top: auto;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 14px 12px;
+        font-size: 11px;
+        color: #bfc8ca;
+      }
+      .sync-line {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #799486;
+      }
+      .dot.saving {
+        background: #9b805e;
+      }
+      .dot.offline {
+        background: #a7584e;
+      }
+      .main {
+        margin-left: 238px;
+        width: calc(100% - 238px);
+        padding: 27px 34px 50px;
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 19px;
+        margin-bottom: 22px;
+      }
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 10px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .top h2 {
+        margin: 5px 0 0;
+        font-size: 28px;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        border: 1px solid #d4d1ca;
+        background: #fff;
+        color: var(--ink);
+        padding: 9px 13px;
+        border-radius: 4px;
+      }
+      .btn:hover {
+        background: #f7f6f2;
+      }
+      .btn.primary {
+        background: #26343c;
+        color: #fff;
+        border-color: #26343c;
+      }
+      .btn.danger {
+        color: #8a4c45;
+        border-color: #d8c0bb;
+      }
+      .btn.small {
+        padding: 7px 9px;
+        font-size: 12px;
+      }
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 13px;
+        margin-bottom: 19px;
+      }
+      .stat {
+        background: #fff;
+        border: 1px solid var(--line);
+        padding: 16px;
+      }
+      .stat small {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .stat strong {
+        display: block;
+        font-size: 24px;
+        margin-top: 8px;
+      }
+      .stat span {
+        display: block;
+        color: #7b8082;
+        font-size: 11px;
+        margin-top: 5px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: 18px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        padding: 17px;
+        margin-bottom: 18px;
+      }
+      .card h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+      .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 13px;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .search {
+        width: 100%;
+        border: 1px solid #d4d1ca;
+        background: #fff;
+        padding: 11px 12px;
+        border-radius: 4px;
+      }
+      .search-results {
+        margin-top: 10px;
+      }
+      .result {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        border-top: 1px solid #e5e2dc;
+        padding: 10px 0;
+      }
+      .table-wrap {
+        overflow: auto;
+      }
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .table th,
+      .table td {
+        padding: 10px;
+        border-bottom: 1px solid #e1ded8;
+        text-align: left;
+        white-space: nowrap;
+        vertical-align: middle;
+      }
+      .table th {
+        font-size: 10px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .table tr:last-child td {
+        border-bottom: 0;
+      }
+      .filters {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-bottom: 13px;
+      }
+      .filters button {
+        border: 1px solid #d4d1ca;
+        background: #fff;
+        padding: 7px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+      .filters button.active {
+        background: #26343c;
+        color: #fff;
+        border-color: #26343c;
+      }
+      .status {
+        display: inline-block;
+        padding: 4px 7px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .paid {
+        background: #e7eee9;
+        color: #4c6b57;
+      }
+      .partial {
+        background: #eee9de;
+        color: #8b633d;
+      }
+      .unpaid {
+        background: #f0e3df;
+        color: #8a4c45;
+      }
+      .advance {
+        background: #e3e9eb;
+        color: #526a72;
+      }
+      .neutral {
+        background: #ece9e3;
+        color: #666;
+      }
+      .danger-box {
+        background: #fbf6f4;
+        border: 1px solid #dfcbc6;
+        padding: 12px;
+        font-size: 12px;
+      }
+      .notice {
+        background: #f7f6f2;
+        border: 1px solid #ddd9d0;
+        padding: 12px;
+        font-size: 12px;
+        margin-bottom: 14px;
+      }
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      .summary .stat {
+        padding: 13px;
+      }
+      .mini-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .nowrap {
+        white-space: nowrap;
+      }
+      .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      .member-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        border-top: 1px solid #e5e2dc;
+        padding: 11px 0;
+        font-size: 13px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 4px 7px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(20, 25, 28, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 20;
+      }
+      .modal-box {
+        background: #fff;
+        width: min(820px, 100%);
+        max-height: 91vh;
+        overflow: auto;
+        padding: 21px;
+      }
+      .modal-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+      .modal-top h3 {
+        margin: 0;
+        font-size: 19px;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 13px;
+      }
+      .field.full {
+        grid-column: 1/-1;
+      }
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 18px;
+      }
+      .toast {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        background: #26343c;
+        color: #fff;
+        padding: 11px 14px;
+        border-radius: 4px;
+        font-size: 12px;
+        display: none;
+        z-index: 30;
+      }
+      .toast.show {
+        display: block;
+      }
+      .small-note {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      @media (max-width: 1060px) {
+        .stats {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .grid,
+        .settings-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 720px) {
+        .sidebar {
+          position: relative;
+          width: 100%;
+          height: auto;
+        }
+        .app {
+          display: block;
+        }
+        .main {
+          margin: 0;
+          width: 100%;
+          padding: 18px;
+        }
+        .nav {
+          display: flex;
+          overflow: auto;
+        }
+        .nav button {
+          min-width: max-content;
+        }
+        .side-bottom {
+          display: none;
+        }
+        .top {
+          display: block;
+        }
+        .actions {
+          margin-top: 12px;
+        }
+        .stats {
+          grid-template-columns: 1fr 1fr;
+        }
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+        .field.full {
+          grid-column: auto;
+        }
+        .summary {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+  </head>
+  <body>
+    <section id="loginScreen" class="login">
+      <div class="login-box">
+        <h1>Property Manager</h1>
+        <p>
+          Secure property, tenant and rent records with cloud synchronization.
+        </p>
+        <div class="tabs">
+          <button type="button" class="active" data-auth-tab="login">
+            Sign in</button
+          ><button type="button" data-auth-tab="signup">Create account</button>
+        </div>
+        <div id="authError" class="login-error hidden"></div>
+        <form id="authForm">
+          <div class="field">
+            <label>Email address</label
+            ><input
+              id="authEmail"
+              type="email"
+              required
+              autocomplete="username"
+            />
+          </div>
+          <div class="field">
+            <label>Password</label
+            ><input
+              id="authPassword"
+              type="password"
+              minlength="6"
+              required
+              autocomplete="current-password"
+            />
+          </div>
+          <div id="confirmPasswordField" class="field hidden">
+            <label>Confirm password</label
+            ><input
+              id="authPassword2"
+              type="password"
+              minlength="6"
+              autocomplete="new-password"
+            />
+          </div>
+          <button
+            id="authSubmit"
+            type="submit"
+            class="btn primary"
+            style="width: 100%"
+          >
+            Sign in
+          </button>
+        </form>
+        <button
+          id="resendConfirmation"
+          type="button"
+          class="btn"
+          style="width: 100%; margin-top: 8px"
+        >
+          Resend confirmation email
+        </button>
+        <div class="login-hint">
+          Each sign-in starts a fresh session. Your records stay protected
+          behind authentication.
+        </div>
+      </div>
+    </section>
+    <div id="appShell" class="app hidden">
+      <aside class="sidebar">
+        <div class="brand">
+          <h1 id="brandName">Property Manager</h1>
+          <p id="brandSub">Tenant Management</p>
+        </div>
+        <nav class="nav">
+          <button type="button" data-nav="dashboard">Dashboard</button
+          ><button type="button" data-nav="tenants">Tenants</button
+          ><button type="button" data-nav="houses">Houses</button
+          ><button type="button" data-nav="payments">Payments</button
+          ><button type="button" data-nav="arrears">Arrears</button
+          ><button type="button" data-nav="settings">Settings</button>
+        </nav>
+        <div class="side-bottom">
+          <div class="sync-line">
+            <span id="saveDot" class="dot"></span
+            ><span id="saveText">Ready</span>
+          </div>
+          <div id="lastSaved" style="margin-top: 5px">—</div>
+          <button
+            type="button"
+            class="btn small"
+            style="margin-top: 10px; width: 100%"
+            data-action="logout"
+          >
+            Sign out
+          </button>
+        </div>
+      </aside>
+      <main class="main">
+        <header class="top">
+          <div>
+            <div class="eyebrow">Property overview</div>
+            <h2 id="title">Dashboard</h2>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn" data-action="sync">
+              Sync now</button
+            ><button type="button" class="btn primary" data-action="new-tenant">
+              Add tenant</button
+            ><button type="button" class="btn" data-action="new-payment">
+              Record payment
+            </button>
+          </div>
+        </header>
+        <section id="dashboard" class="view"></section>
+        <section id="tenants" class="view"></section>
+        <section id="houses" class="view"></section>
+        <section id="payments" class="view"></section>
+        <section id="arrears" class="view"></section>
+        <section id="settings" class="view"></section>
+      </main>
+    </div>
+    <div id="modal" class="modal hidden">
+      <div class="modal-box">
+        <div class="modal-top">
+          <h3 id="modalTitle"></h3>
+          <button type="button" class="btn" data-action="close-modal">
+            Close
+          </button>
+        </div>
+        <div id="modalBody"></div>
+      </div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
